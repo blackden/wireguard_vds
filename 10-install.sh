@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $(id -u) -ne 0 ]]; then
-    printf 'This script must be run as root.\n' >&2
-    exit 1
-fi
-
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
+
+require_root
+
 WORK_DIR=/etc/wireguard
 FORWARD_FILE=/etc/sysctl.d/99-ip_forward.conf
 DEFAULT_SERVER_ADDRESS="10.8.0.1/24"
@@ -77,4 +77,4 @@ EOF2
 
 cp -f wg0.conf.def wg0.conf
 
-systemctl enable wg-quick@wg0 >/dev/null
+enable_wg_service

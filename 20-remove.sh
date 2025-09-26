@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $(id -u) -ne 0 ]]; then
-    printf 'This script must be run as root.\n' >&2
-    exit 1
-fi
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
 
-printf '# Removing\n'
+require_root
 
-wg-quick down wg0 || true
-systemctl stop wg-quick@wg0 || true
-systemctl disable wg-quick@wg0 || true
+log_info 'Removing'
+
+down_wg_interface
+stop_wg_service
+disable_wg_service
 
 DEBIAN_FRONTEND=noninteractive apt-get autoremove -y wireguard wireguard-dkms wireguard-tools || true
 DEBIAN_FRONTEND=noninteractive apt-get update -y
 
 rm -rf /etc/wireguard
 
-printf '# Removed\n'
+log_info 'Removed'

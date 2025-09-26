@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $(id -u) -ne 0 ]]; then
-    printf 'This script must be run as root.\n' >&2
-    exit 1
-fi
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source=lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
+
+require_root
 
 WORK_DIR=/etc/wireguard
 
@@ -28,8 +29,8 @@ printf 'Username is %s\n' "${USERNAME}"
 cd "${WORK_DIR}"
 umask 077
 
-if [[ ! -f dns.var || ! -f endpoint.var || ! -f vpn_subnet.var || ! -f last_used_ip.var ]]; then
-    printf 'WireGuard server has not been initialized. Please run 10-install.sh first.\n' >&2
+if ! ensure_files_exist dns.var endpoint.var vpn_subnet.var last_used_ip.var; then
+    log_error 'WireGuard server has not been initialized. Please run 10-install.sh first.'
     exit 1
 fi
 
@@ -42,8 +43,7 @@ PUB_KEY_SUFFIX=.pub
 ALLOWED_IP="0.0.0.0/0"
 
 CLIENT_DIR="clients/${USERNAME}"
-mkdir -p "${CLIENT_DIR}"
-chmod 700 "${CLIENT_DIR}"
+ensure_directory_secure "${CLIENT_DIR}"
 cd "${CLIENT_DIR}"
 
 CLIENT_PRESHARED_KEY=$(wg genpsk)
@@ -94,7 +94,7 @@ PresharedKey = ${CLIENT_PRESHARED_KEY}
 AllowedIPs = ${CLIENT_IP}
 EOF2
 
-systemctl restart wg-quick@wg0
+restart_wg_service
 
 qrencode -t ansiutf8 < "${USERNAME}.conf"
 
