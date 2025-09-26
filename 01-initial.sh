@@ -1,11 +1,17 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo "# Installing Wireguard"
+if [[ $(id -u) -ne 0 ]]; then
+    printf 'This script must be run as root.\n' >&2
+    exit 1
+fi
 
-./20-remove.sh && \
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-./10-install.sh && \
+printf '# Installing WireGuard\n'
 
-./11-add-client.sh
+"${SCRIPT_DIR}/20-remove.sh"
+"${SCRIPT_DIR}/10-install.sh"
+"${SCRIPT_DIR}/11-add-client.sh"
 
-echo "# Wireguard installed"
+printf '# WireGuard installed\n'

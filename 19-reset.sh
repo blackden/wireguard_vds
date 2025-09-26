@@ -1,17 +1,25 @@
-echo "# Reseting..."
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $(id -u) -ne 0 ]]; then
+    printf 'This script must be run as root.\n' >&2
+    exit 1
+fi
+
+if [[ ! -d /etc/wireguard ]]; then
+    printf 'WireGuard directory not found, nothing to reset.\n'
+    exit 0
+fi
+
+printf '# Resetting...\n'
 
 cd /etc/wireguard
 
-# Delete the folder with customer data
 rm -rf ./clients
-
-# Zero IP counter
-echo "1" > last_used_ip.var
-
-# Resetting the server configuration template to default settings
+printf '1\n' > last_used_ip.var
 cp -f wg0.conf.def wg0.conf
 
-systemctl stop wg-quick@wg0
-wg-quick down wg0
+systemctl stop wg-quick@wg0 || true
+wg-quick down wg0 || true
 
-echo "# Reseted"
+printf '# Reset complete\n'
